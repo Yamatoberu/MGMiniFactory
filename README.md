@@ -60,8 +60,34 @@ This will be the hub for all thing MG Mini Factory a place where customers can g
   </tbody>
 </table>
 
-
 ### View list of print quotes
+Create a table that will display the list of quotes that we have received
+<table>
+  <thead>
+    <tr>
+      <th>Requirement</th>
+      <th>Details</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Table Data</td>
+      <td>This data will be populated with the list of quotes that we have received</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Table Columns</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Table Actions</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
 - Table displaying available quotes
   - Columns
 ### View list of print orders
