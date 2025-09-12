@@ -88,8 +88,8 @@ Create a table that will display the list of quotes that we have received
     </tr>
   </tbody>
 </table>
-- Table displaying available quotes
-  - Columns
+
+
 ### View list of print orders
 - Update order info
 - all quote info, acutal price, print status, payment status
