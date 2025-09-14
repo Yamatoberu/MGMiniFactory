@@ -138,7 +138,11 @@ Create a table that will display the list of quotes that we have received
           <li>Cancel Button - Discards the changes and closes the dialog</li>
         </ul>
       </td>
-      <td></td>
+      <td>
+        <ul>
+          <li>When any of the editable fields are modified, re-calculate the calculated fields</li>
+        </ul>
+      </td>
     </tr>
     <tr>
       <td>Add button above Quotes table to create a new quote</td>
