@@ -155,7 +155,74 @@ Create a table that will display the list of quotes that we have received
 ### View list of print orders
 - Update order info
 - all quote info, acutal price, print status, payment status
+<table>
+  <thead>
+    <th>Requirements</th>
+    <th>Details</th>
+    <th>Notes</th>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Table Data</td>
+      <td>This table will be populated with all of the orders that have been created</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Table Columns</td>
+      <td>
+        <ul>
+          <li>Name - Customer Name</li>
+          <li>Date - When the quote was requested</li>
+          <li>Summary - Name describing the order</li>
+          <li>Print Type - Whether the print is FDM or Resin</li>
+          <li>Material Cost</li>
+          <li>Print Time</li>
+          <li>Print Cost - Calculated Value</li>
+          <li>Labor Time</li>
+          <li>Labor Cost - Calculated Value</li>
+          <li>Total Cost - Calculated Value</li>
+          <li>Suggested Price - Calculated Value</li>
+          <li>Actual Price - The price quoted to the customer</li>
+          <li>Is Paid - Boolean of whether the order has been paid for or not</li>
+          <li>Order Status</li>
+        </ul>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Table Actions</td>
+      <td>
+        <ul>
+          <li>Double-click - Open the "Edit Order" dialog</li>
+          <li>Mark as Paid</li>
+          <li>Complete Order</li>
+      </td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
 ### Convert quotes to print order
+<table>
+  <thead>
+    <th>Requirements</th>
+    <th>Details</th>
+    <th>Notes</th>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Create "Edit Order" dialog</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
 ## Future enhancements
 * Quote request process
 * Enable login for admin
