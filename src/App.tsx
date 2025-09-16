@@ -29,9 +29,6 @@ function Navigation() {
             </Link>
           </nav>
           <div className="flex-1"></div>
-          <Link to="/quotes" className="inline-flex items-center rounded-full bg-[var(--brand)] px-6 py-3 text-white font-semibold shadow-sm hover:brightness-110 transition">
-            Create Quote
-          </Link>
         </div>
       </div>
     </header>
