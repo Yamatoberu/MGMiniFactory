@@ -7,7 +7,7 @@ export async function fetchQuotes(): Promise<ApiResponse<QuoteRow[]>> {
       .from('quotes')
       .select(`
         *,
-        quote_status_ref!inner(status_name)
+        quote_status_ref!inner(name)
       `)
       .order('created_on', { ascending: false })
 

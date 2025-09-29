@@ -83,7 +83,7 @@ export default function QuotesPage() {
 
   const getStatusName = (statusId: number) => {
     const status = quoteStatuses.find(s => s.id === statusId)
-    return status?.status_name || 'Unknown'
+    return status?.name || 'Unknown'
   }
 
   const getStatusColor = (statusId: number) => {

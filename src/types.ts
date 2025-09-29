@@ -22,13 +22,13 @@ export interface OrderRow {
 // Reference table types
 export interface QuoteStatus {
   id: number
-  status_name: string
+  name: string
   description?: string
 }
 
 export interface OrderStatus {
   id: number
-  status_name: string
+  name: string
   description?: string
 }
 
