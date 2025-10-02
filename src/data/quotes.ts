@@ -5,10 +5,7 @@ export async function fetchQuotes(): Promise<ApiResponse<QuoteRow[]>> {
   try {
     const { data, error } = await supabase
       .from('quotes')
-      .select(`
-        *,
-        quote_status_ref!inner(name)
-      `)
+      .select('*')
       .order('created_on', { ascending: false })
 
     if (error) {
@@ -26,7 +23,7 @@ export async function fetchQuoteStatuses(): Promise<ApiResponse<QuoteStatus[]>> 
     const { data, error } = await supabase
       .from('quote_status_ref')
       .select('*')
-      .order('id')
+      .order('quote_status_ref_id')
 
     if (error) {
       return { data: null, error: error.message }

@@ -4,6 +4,13 @@ import { fetchQuotes, fetchQuoteStatuses } from '../data/quotes'
 import { createOrderFromQuote, markQuoteConverted } from '../data/orders'
 import QuoteModal from '../components/QuoteModal'
 
+const statusColorMap: Record<number, string> = {
+  1: 'bg-[var(--brand)]/10 text-[var(--brand)]', // New
+  2: 'bg-blue-100 text-blue-800', // Submitted
+  3: 'bg-green-100 text-green-800', // Converted
+  4: 'bg-red-100 text-red-700', // Abandoned
+}
+
 export default function QuotesPage() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([])
   const [quoteStatuses, setQuoteStatuses] = useState<QuoteStatus[]>([])
@@ -82,16 +89,12 @@ export default function QuotesPage() {
   }
 
   const getStatusName = (statusId: number) => {
-    const status = quoteStatuses.find(s => s.id === statusId)
+    const status = quoteStatuses.find(s => s.quote_status_ref_id === statusId)
     return status?.name || 'Unknown'
   }
 
   const getStatusColor = (statusId: number) => {
-    switch (statusId) {
-      case 1: return 'bg-[var(--brand)]/10 text-[var(--brand)]' // Draft
-      case 2: return 'bg-green-100 text-green-800'   // Converted
-      default: return 'bg-stone-100 text-stone-800'
-    }
+    return statusColorMap[statusId] || 'bg-stone-100 text-stone-800'
   }
 
   if (isLoading) {
@@ -101,6 +104,8 @@ export default function QuotesPage() {
       </div>
     )
   }
+
+  const activeQuotes = quotes.filter((quote) => quote.quote_status_id === 1)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
@@ -154,14 +159,14 @@ export default function QuotesPage() {
             {quotes.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                  No quotes found
+                  No active quotes found
                 </td>
               </tr>
             ) : (
               quotes.map((quote) => (
                 <tr key={quote.id} className="hover:bg-stone-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">
-                    #{quote.id}
+                    {quote.quote_id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
                     {quote.customer_name}
@@ -179,8 +184,8 @@ export default function QuotesPage() {
                     {quote.labor_time}h
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(quote.quote_status_id)}`}>
-                      {getStatusName(quote.quote_status_id)}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(quote.status)}`}>
+                      {getStatusName(quote.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
