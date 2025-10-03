@@ -1,12 +1,19 @@
 // Database row types
 export interface QuoteRow {
-  quote_id: number
+  id: number
+  quote_id?: number
   customer_name: string
   project_summary: string
   material_cost: number
   print_time: number
   labor_time: number
+  labor_cost?: number | null
+  print_cost?: number | null
+  total_cost?: number | null
+  suggested_price?: number | null
+  actual_price?: number | null
   status: number
+  quote_status_id: number
   created_on: string
   updated_on: string
 }
@@ -17,6 +24,10 @@ export interface OrderRow {
   order_status_id: number
   created_on: string
   updated_on: string
+}
+
+export interface OrderWithQuote extends OrderRow {
+  quote: QuoteRow | null
 }
 
 // Reference table types

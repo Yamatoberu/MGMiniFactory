@@ -37,14 +37,21 @@ export async function fetchQuoteStatuses(): Promise<ApiResponse<QuoteStatus[]>> 
 
 export async function upsertQuote(payload: QuoteFormData & { id?: number }): Promise<ApiResponse<QuoteRow>> {
   try {
+    var calc_print_cost = payload.print_time * .14
+    var calc_labor_cost = payload.labor_time * 15
+    var calc_total_cost = payload.material_cost + calc_print_cost + calc_labor_cost
+    var calc_suggested_price = calc_total_cost / .7
+
     const quoteData = {
       customer_name: payload.customer_name,
       project_summary: payload.project_summary,
       material_cost: payload.material_cost,
       print_time: payload.print_time,
+      print_cost: calc_print_cost,
       labor_time: payload.labor_time,
-      quote_status_id: 1, // Default to Draft status
-      updated_on: new Date().toISOString()
+      labor_cost: calc_labor_cost,
+      total_cost: calc_total_cost,
+      suggested_price: calc_suggested_price
     }
 
     let data, error
@@ -54,7 +61,7 @@ export async function upsertQuote(payload: QuoteFormData & { id?: number }): Pro
       const result = await supabase
         .from('quotes')
         .update(quoteData)
-        .eq('id', payload.id)
+        .eq('quote_id', payload.id)
         .select()
         .single()
       

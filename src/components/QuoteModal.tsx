@@ -47,7 +47,7 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote }: QuoteModa
     setError(null)
 
     try {
-      const payload = quote ? { ...formData, id: quote.id } : formData
+      const payload = quote ? { ...formData, id: quote.quote_id } : formData
       const result = await upsertQuote(payload)
 
       if (result.error) {
@@ -139,7 +139,7 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote }: QuoteModa
               value={formData.print_time}
               onChange={handleChange}
               min="0"
-              step="0.1"
+              step="0.5"
               required
               className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
             />
@@ -156,7 +156,7 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote }: QuoteModa
               value={formData.labor_time}
               onChange={handleChange}
               min="0"
-              step="0.1"
+              step="0.5"
               required
               className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
             />
