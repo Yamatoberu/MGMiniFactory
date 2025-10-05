@@ -116,9 +116,6 @@ export default function OrdersPage() {
                 Order #
               </th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
-                Quote #
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
                 Customer
               </th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
@@ -155,9 +152,6 @@ export default function OrdersPage() {
                   <tr key={order.id} className="hover:bg-stone-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">
                       {order.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
-                      {quote?.quote_id ?? order.quote_id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
                       {quote?.customer_name ?? 'Unknown customer'}

@@ -4,6 +4,7 @@ export interface QuoteRow {
   quote_id?: number
   customer_name: string
   project_summary: string
+  print_type: number
   material_cost: number
   print_time: number
   labor_time: number
@@ -43,18 +44,22 @@ export interface OrderStatus {
 }
 
 export interface PrintType {
-  id: number
-  type_name: string
-  description?: string
+  print_type_id: number
+  name: string
+  power_cost: number
+  maintenance_cost: number
 }
 
 // Form types
 export interface QuoteFormData {
   customer_name: string
   project_summary: string
+  print_type: number
+  status: number
   material_cost: number
   print_time: number
   labor_time: number
+  actual_price: number
 }
 
 // API response types
