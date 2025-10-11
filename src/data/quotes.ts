@@ -64,7 +64,6 @@ export async function upsertQuote(payload: QuoteFormData & { id?: number }): Pro
       project_summary: payload.project_summary,
       print_type: payload.print_type,
       status: payload.status,
-      quote_status_id: payload.status,
       material_cost: payload.material_cost,
       print_time: payload.print_time,
       print_cost: calc_print_cost,

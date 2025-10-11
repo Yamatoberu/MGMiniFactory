@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { QuoteFormData, QuoteRow, PrintType, QuoteStatus } from '../types'
 import { upsertQuote } from '../data/quotes'
 
@@ -22,8 +22,22 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
     labor_time: 0,
     actual_price: 0
   })
+  const [actualPriceInput, setActualPriceInput] = useState('0.00')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const normalizeActualPrice = useCallback((rawValue: string) => {
+    const parsed = parseFloat(rawValue)
+
+    if (!Number.isFinite(parsed)) {
+      return { formatted: '0.00', numeric: 0 }
+    }
+
+    const normalized = Math.round(parsed * 100) / 100
+    const formatted = normalized.toFixed(2)
+
+    return { formatted, numeric: normalized }
+  }, [])
 
   const selectedPrintType = printTypes.find(type => type.print_type_id === formData.print_type) || null
   const printRate = selectedPrintType ? selectedPrintType.power_cost + selectedPrintType.maintenance_cost : 0
@@ -88,9 +102,14 @@ const statusColorClass = isConverted && convertedStatus
   ? getStatusColor(convertedStatus.quote_status_ref_id)
   : getStatusColor(statusSelectValue)
 
-  const formatCurrencyInput = (value: number) => {
-    if (!Number.isFinite(value)) return ''
-    return value.toFixed(2)
+  const handleActualPriceBlur = () => {
+    const { formatted, numeric } = normalizeActualPrice(actualPriceInput)
+
+    setActualPriceInput(formatted)
+    setFormData(prev => ({
+      ...prev,
+      actual_price: numeric
+    }))
   }
 
   const formatCurrency = (value: number) => {
@@ -103,6 +122,9 @@ const statusColorClass = isConverted && convertedStatus
     const defaultStatus = quote?.status ?? defaultStatusId
 
     if (quote) {
+      const initialActualPrice = typeof quote.actual_price === 'number' ? quote.actual_price : 0
+      const { formatted, numeric } = normalizeActualPrice(initialActualPrice.toString())
+
       setFormData({
         customer_name: quote.customer_name,
         project_summary: quote.project_summary,
@@ -111,9 +133,12 @@ const statusColorClass = isConverted && convertedStatus
         material_cost: quote.material_cost,
         print_time: quote.print_time,
         labor_time: quote.labor_time,
-        actual_price: typeof quote.actual_price === 'number' ? quote.actual_price : 0
+        actual_price: numeric
       })
+      setActualPriceInput(formatted)
     } else {
+      const { formatted, numeric } = normalizeActualPrice('0')
+
       setFormData({
         customer_name: '',
         project_summary: '',
@@ -122,11 +147,12 @@ const statusColorClass = isConverted && convertedStatus
         material_cost: 0,
         print_time: 0,
         labor_time: 0,
-        actual_price: 0
+        actual_price: numeric
       })
+      setActualPriceInput(formatted)
     }
     setError(null)
-  }, [quote, isOpen, printTypes, selectableQuoteStatuses, convertedStatusId, defaultStatusId])
+  }, [quote, isOpen, printTypes, selectableQuoteStatuses, convertedStatusId, defaultStatusId, normalizeActualPrice])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -140,11 +166,25 @@ const statusColorClass = isConverted && convertedStatus
       return
     }
 
+    const { formatted, numeric } = normalizeActualPrice(actualPriceInput)
+
+    if (formatted !== actualPriceInput) {
+      setActualPriceInput(formatted)
+    }
+
+    if (numeric !== formData.actual_price) {
+      setFormData(prev => ({
+        ...prev,
+        actual_price: numeric
+      }))
+    }
+
     setIsLoading(true)
     setError(null)
 
     try {
-      const payload = quote ? { ...formData, id: quote.quote_id } : formData
+      const basePayload = quote ? { ...formData, id: quote.quote_id } : formData
+      const payload = { ...basePayload, actual_price: numeric }
       const result = await upsertQuote(payload)
 
       if (result.error) {
@@ -162,6 +202,16 @@ const statusColorClass = isConverted && convertedStatus
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+
+    if (name === 'actual_price') {
+      setActualPriceInput(value)
+      setFormData(prev => ({
+        ...prev,
+        actual_price: value === '' ? 0 : parseFloat(value) || 0
+      }))
+      return
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: name === 'print_type' || name === 'status'
@@ -354,8 +404,9 @@ const statusColorClass = isConverted && convertedStatus
                           type="number"
                           id="actual_price"
                           name="actual_price"
-                          value={formatCurrencyInput(formData.actual_price)}
+                          value={actualPriceInput}
                           onChange={handleChange}
+                          onBlur={handleActualPriceBlur}
                           min="0"
                           step="0.5"
                           disabled={isReadOnly}
