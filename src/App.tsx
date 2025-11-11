@@ -54,19 +54,15 @@ function HomePage() {
 
       <footer className="bg-white ring-1 ring-stone-200 rounded-2xl p-8 shadow-sm">
         <h2 className="text-2xl font-bold text-stone-900">About Us</h2>
-        <p className="mt-3 text-stone-600 leading-relaxed">MG Mini Factory is a boutique miniature studio dedicated to helping hobbyists, retailers, and game masters bring their worlds to life. Our team of seasoned makers blends traditional craftsmanship with modern fabrication to deliver pieces that stand out on every table.</p>
+        <p className="mt-3 text-stone-600 leading-relaxed">At MG Mini Factory, imagination goes 3D. We bring ideas to life—one layer at a time—with custom minis, epic prints, and a dash of geeky magic. Whether you’re building a collection or crafting your next campaign, we’re here to make your world a little more miniature and a lot more awesome.</p>
         <div className="mt-6 grid gap-6 md:grid-cols-3">
           <div>
             <h3 className="font-semibold text-stone-900">What We Do</h3>
-            <p className="mt-2 text-sm text-stone-600">Custom sculpting, resin and FDM production runs, and rapid prototyping for new game concepts.</p>
-          </div>
-          <div>
-            <h3 className="font-semibold text-stone-900">Studio Hours</h3>
-            <p className="mt-2 text-sm text-stone-600">Mon-Fri: 9am-6pm<br />Sat: 10am-4pm<br />Sun: Closed</p>
+            <p className="mt-2 text-sm text-stone-600">We create high-quality 3D-printed minis and custom designs that bring your imagination to life.</p>
           </div>
           <div>
             <h3 className="font-semibold text-stone-900">Get In Touch</h3>
-            <p className="mt-2 text-sm text-stone-600">hello@mgminifactory.test<br />555-0134<br />120 Forge Line, Maker City</p>
+            <p className="mt-2 text-sm text-stone-600">mgminifactory208@gmail.com</p>
           </div>
         </div>
       </footer>
