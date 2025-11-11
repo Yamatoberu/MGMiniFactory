@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { QuoteRow, QuoteStatus, PrintType } from '../types'
 import { fetchQuotes, fetchQuoteStatuses, fetchPrintTypes } from '../data/quotes'
 import QuoteModal from '../components/QuoteModal'

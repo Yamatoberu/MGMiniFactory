@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { fetchOrders, fetchOrderStatuses } from '../data/orders'
 import { OrderStatus, OrderWithQuote } from '../types'
 import OrderModal from '../components/OrderModal'
