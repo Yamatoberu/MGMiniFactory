@@ -67,3 +67,12 @@ export interface ApiResponse<T> {
   data: T | null
   error: string | null
 }
+
+export interface UserRecord {
+  id: number
+  created_at?: string
+  name?: string | null
+  username?: string | null
+  email: string
+  admin: boolean
+}
