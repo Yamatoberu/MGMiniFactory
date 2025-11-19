@@ -3,6 +3,7 @@ export interface QuoteRow {
   id: number
   quote_id?: number
   customer_name: string
+  order_date?: string | null
   project_summary: string
   print_type: number
   material_cost: number
@@ -22,9 +23,8 @@ export interface QuoteRow {
 export interface OrderRow {
   id: number
   quote_id: number
-  order_status_id: number
+  status: number
   created_on: string
-  updated_on: string
 }
 
 export interface OrderWithQuote extends OrderRow {
@@ -53,6 +53,7 @@ export interface PrintType {
 // Form types
 export interface QuoteFormData {
   customer_name: string
+  order_date: string
   project_summary: string
   print_type: number
   status: number

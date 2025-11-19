@@ -52,20 +52,20 @@ export async function fetchOrders(): Promise<ApiResponse<OrderWithQuote[]>> {
     const rows = data as (OrderRow & {
       order_id?: number
       status?: number
+      order_status_id?: number
       quote?: QuoteRow | null
     })[]
 
     const ordersWithQuotes = rows
       .map((order) => {
         const id = order.id ?? order.order_id ?? 0
-        const statusId = order.order_status_id ?? order.status ?? 0
+        const statusId = order.status ?? order.order_status_id ?? 0
 
         return {
           id,
           quote_id: order.quote_id,
-          order_status_id: statusId,
+          status: statusId,
           created_on: order.created_on,
-          updated_on: order.updated_on,
           quote: order.quote ?? null,
         }
       })
@@ -86,9 +86,8 @@ export async function createOrderFromQuote(
       .from('orders')
       .insert({
         quote_id: quote.id ?? quote.quote_id,
-        order_status_id: initialOrderStatusId,
-        created_on: new Date().toISOString(),
-        updated_on: new Date().toISOString()
+        status: initialOrderStatusId,
+        created_on: new Date().toISOString()
       })
       .select()
       .single()
@@ -130,8 +129,7 @@ export async function updateOrderStatus(orderId: number, orderStatusId: number):
     const { data, error } = await supabase
       .from('orders')
       .update({
-        order_status_id: orderStatusId,
-        updated_on: new Date().toISOString(),
+        status: orderStatusId,
       })
       .eq('id', orderId)
       .select()

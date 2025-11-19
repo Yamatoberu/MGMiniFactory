@@ -23,7 +23,7 @@ export default function OrderModal({
 
   useEffect(() => {
     if (order) {
-      setSelectedStatusId(order.order_status_id)
+      setSelectedStatusId(order.status)
     } else {
       setSelectedStatusId(null)
     }
