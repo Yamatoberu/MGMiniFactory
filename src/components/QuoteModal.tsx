@@ -2,6 +2,12 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { QuoteFormData, QuoteRow, PrintType, QuoteStatus } from '../types'
 import { upsertQuote } from '../data/quotes'
 
+const getTodayDateString = () => new Date().toISOString().split('T')[0]
+const normalizeDateForInput = (value?: string | null) => {
+  if (!value) return ''
+  return value.split('T')[0]
+}
+
 interface QuoteModalProps {
   isOpen: boolean
   onClose: () => void
@@ -14,6 +20,7 @@ interface QuoteModalProps {
 export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes, quoteStatuses }: QuoteModalProps) {
   const [formData, setFormData] = useState<QuoteFormData>({
     customer_name: '',
+    order_date: getTodayDateString(),
     project_summary: '',
     print_type: 0,
     status: 0,
@@ -124,9 +131,11 @@ const statusColorClass = isConverted && convertedStatus
     if (quote) {
       const initialActualPrice = typeof quote.actual_price === 'number' ? quote.actual_price : 0
       const { formatted, numeric } = normalizeActualPrice(initialActualPrice.toString())
+      const normalizedOrderDate = normalizeDateForInput(quote.order_date) || getTodayDateString()
 
       setFormData({
         customer_name: quote.customer_name,
+        order_date: normalizedOrderDate,
         project_summary: quote.project_summary,
         print_type: defaultPrintType,
         status: defaultStatus,
@@ -138,9 +147,11 @@ const statusColorClass = isConverted && convertedStatus
       setActualPriceInput(formatted)
     } else {
       const { formatted, numeric } = normalizeActualPrice('0')
+      const today = getTodayDateString()
 
       setFormData({
         customer_name: '',
+        order_date: today,
         project_summary: '',
         print_type: defaultPrintType,
         status: defaultStatus,
@@ -248,20 +259,38 @@ const statusColorClass = isConverted && convertedStatus
               </div>
             )}
 
-            <div>
-              <label htmlFor="customer_name" className="block text-sm font-semibold text-stone-700 mb-2">
-                Customer Name
-              </label>
-              <input
-                type="text"
-                id="customer_name"
-                name="customer_name"
-                value={formData.customer_name}
-                onChange={handleChange}
-                required
-                disabled={isReadOnly}
-                className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
-              />
+            <div className="sm:flex sm:space-x-4">
+              <div className="sm:w-1/2">
+                <label htmlFor="customer_name" className="block text-sm font-semibold text-stone-700 mb-2">
+                  Customer Name
+                </label>
+                <input
+                  type="text"
+                  id="customer_name"
+                  name="customer_name"
+                  value={formData.customer_name}
+                  onChange={handleChange}
+                  required
+                  disabled={isReadOnly}
+                  className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
+                />
+              </div>
+
+              <div className="mt-6 sm:mt-0 sm:w-1/2">
+                <label htmlFor="order_date" className="block text-sm font-semibold text-stone-700 mb-2">
+                  Order Date
+                </label>
+                <input
+                  type="date"
+                  id="order_date"
+                  name="order_date"
+                  value={formData.order_date}
+                  onChange={handleChange}
+                  required
+                  disabled={isReadOnly}
+                  className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
+                />
+              </div>
             </div>
 
             <div>
