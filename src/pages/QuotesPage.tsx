@@ -155,6 +155,9 @@ export default function QuotesPage() {
           <table className="min-w-full w-full divide-y divide-stone-200">
             <thead className="bg-stone-50">
               <tr>
+                <th className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap">
+                  Status
+                </th>
                 <th
                   className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap"
                 >
@@ -182,9 +185,6 @@ export default function QuotesPage() {
                 <th className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap">
                   Quoted Price
                 </th>
-                <th className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap">
-                  Status
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-stone-200">
@@ -204,6 +204,11 @@ export default function QuotesPage() {
                       onClick={() => handleRowClick(quote)}
                       className="hover:bg-stone-50 transition-colors cursor-pointer"
                     >
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(quote.status)}`}>
+                          {getStatusName(quote.status)}
+                        </span>
+                      </td>
                       <td
                         className="py-4 px-6 whitespace-nowrap text-sm text-stone-900"
                       >
@@ -232,11 +237,6 @@ export default function QuotesPage() {
                       </td>
                       <td className="py-4 px-6 whitespace-nowrap text-sm text-stone-900">
                         {formatCurrency(quote.actual_price)}
-                      </td>
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(quote.status)}`}>
-                          {getStatusName(quote.status)}
-                        </span>
                       </td>
                     </tr>
                   )

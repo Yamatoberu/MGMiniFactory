@@ -23,9 +23,8 @@ export interface QuoteRow {
 export interface OrderRow {
   id: number
   quote_id: number
-  order_status_id: number
+  status: number
   created_on: string
-  updated_on: string
 }
 
 export interface OrderWithQuote extends OrderRow {
