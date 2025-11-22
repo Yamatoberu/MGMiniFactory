@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } f
 import { FormEvent, useEffect, useState } from 'react'
 import QuotesPage from './pages/QuotesPage'
 import OrdersPage from './pages/OrdersPage'
-import InstagramCarousel from './components/InstagramCarousel'
 import { loginUser, fetchAuthenticatedUser, logoutSession } from './data/auth'
 import type { UserRecord } from './types'
 
@@ -172,8 +171,6 @@ function HomePage({ isAuthenticated, user }: HomePageProps) {
           </p>
         </section>
       )}
-
-      <InstagramCarousel />
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="rounded-2xl bg-white p-6 ring-1 ring-stone-200 shadow-sm hover:ring-[var(--brand)] transition">
