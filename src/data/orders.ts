@@ -38,6 +38,20 @@ export async function fetchOrderStatuses(): Promise<ApiResponse<OrderStatus[]>> 
   }
 }
 
+type RawOrderRow = {
+  id?: number
+  order_id?: number
+  quote_id: number
+  status?: number | null
+  order_status_id?: number | null
+  created_on: string
+  notes?: string | null
+  is_paid?: boolean | string | number | null
+  order_paid?: boolean | string | number | null
+  paid?: boolean | string | number | null
+  quote?: QuoteRow | null
+}
+
 export async function fetchOrders(): Promise<ApiResponse<OrderWithQuote[]>> {
   try {
     const { data, error } = await supabase
@@ -49,23 +63,33 @@ export async function fetchOrders(): Promise<ApiResponse<OrderWithQuote[]>> {
       return { data: null, error: error.message }
     }
 
-    const rows = data as (OrderRow & {
-      order_id?: number
-      status?: number
-      quote?: QuoteRow | null
-    })[]
+    const rows = data as RawOrderRow[]
 
     const ordersWithQuotes = rows
       .map((order) => {
         const id = order.id ?? order.order_id ?? 0
-        const statusId = order.order_status_id ?? order.status ?? 0
+        const statusId = order.status ?? order.order_status_id ?? 0
+        const paidValue = typeof order.is_paid !== 'undefined'
+          ? order.is_paid
+          : typeof order.order_paid !== 'undefined'
+            ? order.order_paid
+            : order.paid
+        const isPaid = typeof paidValue === 'boolean'
+          ? paidValue
+          : typeof paidValue === 'number'
+            ? paidValue !== 0
+            : typeof paidValue === 'string'
+              ? ['true', '1', 't', 'yes'].includes(paidValue.toLowerCase())
+              : false
 
         return {
           id,
+          order_id: order.order_id ?? order.id ?? id,
           quote_id: order.quote_id,
-          order_status_id: statusId,
+          status: statusId,
+          is_paid: isPaid,
+          notes: typeof order.notes === 'string' ? order.notes : null,
           created_on: order.created_on,
-          updated_on: order.updated_on,
           quote: order.quote ?? null,
         }
       })
@@ -86,9 +110,8 @@ export async function createOrderFromQuote(
       .from('orders')
       .insert({
         quote_id: quote.id ?? quote.quote_id,
-        order_status_id: initialOrderStatusId,
-        created_on: new Date().toISOString(),
-        updated_on: new Date().toISOString()
+        status: initialOrderStatusId,
+        created_on: new Date().toISOString()
       })
       .select()
       .single()
@@ -125,15 +148,30 @@ export async function markQuoteConverted(quoteId: number, convertedStatusId: num
   }
 }
 
-export async function updateOrderStatus(orderId: number, orderStatusId: number): Promise<ApiResponse<OrderRow>> {
+export async function updateOrderStatus(
+  orderId: number,
+  orderStatusId: number,
+  isPaid?: boolean,
+  notes?: string,
+): Promise<ApiResponse<OrderRow>> {
   try {
+    const payload: Partial<OrderRow> = {
+      status: orderStatusId,
+    }
+
+    if (typeof isPaid === 'boolean') {
+      payload.is_paid = isPaid
+    }
+
+    if (typeof notes !== 'undefined') {
+      const trimmed = notes.trim()
+      payload.notes = trimmed.length > 0 ? trimmed : null
+    }
+
     const { data, error } = await supabase
       .from('orders')
-      .update({
-        order_status_id: orderStatusId,
-        updated_on: new Date().toISOString(),
-      })
-      .eq('id', orderId)
+      .update(payload)
+      .eq('order_id', orderId)
       .select()
       .single()
 

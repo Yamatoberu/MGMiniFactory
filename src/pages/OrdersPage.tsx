@@ -72,11 +72,16 @@ export default function OrdersPage() {
     setIsModalOpen(true)
   }
 
-  const handleOrderUpdated = (orderId: number, newStatusId: number) => {
+  const handleOrderUpdated = (
+    orderId: number,
+    newStatusId: number,
+    isPaid: boolean,
+    notes: string,
+  ) => {
     setOrders((prev) =>
       prev.map((existing) =>
         existing.id === orderId
-          ? { ...existing, order_status_id: newStatusId }
+          ? { ...existing, status: newStatusId, is_paid: isPaid, notes }
           : existing,
       ),
     )
@@ -169,8 +174,8 @@ export default function OrdersPage() {
                       {quote?.labor_time != null ? `${quote.labor_time}h` : '—'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.order_status_id)}`}>
-                        {getStatusName(order.order_status_id)}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                        {getStatusName(order.status)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
