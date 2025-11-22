@@ -61,6 +61,7 @@ export async function upsertQuote(payload: QuoteFormData & { id?: number }): Pro
 
     const quoteData = {
       customer_name: payload.customer_name,
+      order_date: payload.order_date,
       project_summary: payload.project_summary,
       print_type: payload.print_type,
       status: payload.status,

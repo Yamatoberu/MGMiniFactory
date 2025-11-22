@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { QuoteFormData, QuoteRow, PrintType, QuoteStatus } from '../types'
 import { upsertQuote } from '../data/quotes'
+import { createOrderFromQuote } from '../data/orders'
+
+const getTodayDateString = () => new Date().toISOString().split('T')[0]
+const normalizeDateForInput = (value?: string | null) => {
+  if (!value) return ''
+  return value.split('T')[0]
+}
 
 interface QuoteModalProps {
   isOpen: boolean
@@ -14,6 +21,7 @@ interface QuoteModalProps {
 export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes, quoteStatuses }: QuoteModalProps) {
   const [formData, setFormData] = useState<QuoteFormData>({
     customer_name: '',
+    order_date: getTodayDateString(),
     project_summary: '',
     print_type: 0,
     status: 0,
@@ -25,6 +33,7 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
   const [actualPriceInput, setActualPriceInput] = useState('0.00')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const QUEUE_ORDER_STATUS_ID = 1
 
   const normalizeActualPrice = useCallback((rawValue: string) => {
     const parsed = parseFloat(rawValue)
@@ -46,61 +55,73 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
   const calculatedTotalCost = formData.material_cost + calculatedPrintCost + calculatedLaborCost
   const calculatedSuggestedPrice = calculatedTotalCost / 0.7
 
-const convertedStatus = quoteStatuses.find(status => status.name?.toLowerCase() === 'converted') || null
-const convertedStatusId = convertedStatus?.quote_status_ref_id
+  const convertedStatus = quoteStatuses.find(status => status.name?.toLowerCase() === 'converted') || null
+  const convertedStatusId = convertedStatus?.quote_status_ref_id
+  const abandonedStatus = quoteStatuses.find(status => status.name?.toLowerCase() === 'abandoned') || null
+  const abandonedStatusId = abandonedStatus?.quote_status_ref_id
 
-const selectableQuoteStatuses = useMemo(
-  () => quoteStatuses.filter(status => status.quote_status_ref_id !== convertedStatusId),
-  [quoteStatuses, convertedStatusId]
-)
+  const selectableQuoteStatuses = useMemo(
+    () => quoteStatuses.filter(status => status.quote_status_ref_id !== convertedStatusId),
+    [quoteStatuses, convertedStatusId]
+  )
 
-const defaultStatusId = useMemo(() => {
-  const preferred = selectableQuoteStatuses.find(status => status.name?.toLowerCase() === 'new')
-  if (preferred) return preferred.quote_status_ref_id
-  if (selectableQuoteStatuses.length > 0) {
-    return selectableQuoteStatuses[0].quote_status_ref_id
-  }
-  return convertedStatusId ?? 0
-}, [selectableQuoteStatuses, convertedStatusId])
+  const defaultStatusId = useMemo(() => {
+    const preferred = selectableQuoteStatuses.find(status => status.name?.toLowerCase() === 'new')
+    if (preferred) return preferred.quote_status_ref_id
+    if (selectableQuoteStatuses.length > 0) {
+      return selectableQuoteStatuses[0].quote_status_ref_id
+    }
+    return convertedStatusId ?? 0
+  }, [selectableQuoteStatuses, convertedStatusId])
 
   const isConverted = Boolean(convertedStatusId && quote?.status === convertedStatusId)
-  const isReadOnly = isConverted
+  const isAbandoned = Boolean(abandonedStatusId && quote?.status === abandonedStatusId)
+  const isReadOnly = isConverted || isAbandoned
+  const canShowActionButtons = Boolean(quote && !isConverted && !isAbandoned)
 
-const hasMatchingStatus = selectableQuoteStatuses.some(status => status.quote_status_ref_id === formData.status)
-const rawStatusValue = isConverted && convertedStatusId !== undefined
-  ? convertedStatusId
-  : hasMatchingStatus
-    ? formData.status
-    : ''
-const statusSelectValue = rawStatusValue === '' ? '' : String(rawStatusValue)
+  const hasMatchingStatus = selectableQuoteStatuses.some(status => status.quote_status_ref_id === formData.status)
+  const rawStatusValue = isConverted && convertedStatusId !== undefined
+    ? convertedStatusId
+    : hasMatchingStatus
+      ? formData.status
+      : ''
+  const statusSelectValue = rawStatusValue === '' ? '' : String(rawStatusValue)
 
-const statusColorMap: Record<number, string> = {
-  1: 'bg-amber-100 text-amber-800', // New
-  2: 'bg-blue-100 text-blue-800', // Submitted
-  3: 'bg-green-100 text-green-800', // Converted
-  4: 'bg-red-100 text-red-700', // Abandoned
-}
-
-const getStatusColor = (statusId: number | string) => {
-  const numericId = typeof statusId === 'string' ? parseInt(statusId, 10) : statusId
-  if (!Number.isFinite(numericId)) {
-    return 'bg-stone-100 text-stone-700'
+  const statusColorMap: Record<number, string> = {
+    1: 'bg-amber-100 text-amber-800', // New
+    2: 'bg-blue-100 text-blue-800', // Submitted
+    3: 'bg-green-100 text-green-800', // Converted
+    4: 'bg-red-100 text-red-700', // Abandoned
   }
-  return statusColorMap[numericId] || 'bg-stone-100 text-stone-700'
-}
 
-const printTypeColorMap: Record<string, string> = {
-  resin: 'bg-purple-100 text-purple-800',
-  fdm: 'bg-amber-100 text-amber-800',
-}
+  const getStatusColor = (statusId: number | string) => {
+    const numericId = typeof statusId === 'string' ? parseInt(statusId, 10) : statusId
+    if (!Number.isFinite(numericId)) {
+      return 'bg-stone-100 text-stone-700'
+    }
+    return statusColorMap[numericId] || 'bg-stone-100 text-stone-700'
+  }
 
-const selectedPrintTypeName = printTypes.find(type => type.print_type_id === formData.print_type)?.name || ''
-const normalizedPrintTypeName = selectedPrintTypeName.toLowerCase()
-const printTypeColorClass = printTypeColorMap[normalizedPrintTypeName] || 'bg-stone-100 text-stone-700'
+  const printTypeColorMap: Record<string, string> = {
+    resin: 'bg-purple-100 text-purple-800',
+    fdm: 'bg-amber-100 text-amber-800',
+  }
 
-const statusColorClass = isConverted && convertedStatus
-  ? getStatusColor(convertedStatus.quote_status_ref_id)
-  : getStatusColor(statusSelectValue)
+  const selectedPrintTypeName = printTypes.find(type => type.print_type_id === formData.print_type)?.name || ''
+  const normalizedPrintTypeName = selectedPrintTypeName.toLowerCase()
+  const printTypeColorClass = printTypeColorMap[normalizedPrintTypeName] || 'bg-stone-100 text-stone-700'
+
+  const statusLabel = isConverted && convertedStatus
+    ? convertedStatus.name
+    : isAbandoned && abandonedStatus
+      ? abandonedStatus.name
+      : selectableQuoteStatuses.find(status => status.quote_status_ref_id === formData.status)?.name || 'Unknown'
+
+  const statusColorClass = isConverted && convertedStatus
+    ? getStatusColor(convertedStatus.quote_status_ref_id)
+    : isAbandoned && abandonedStatus
+      ? getStatusColor(abandonedStatus.quote_status_ref_id)
+      : getStatusColor(statusSelectValue)
 
   const handleActualPriceBlur = () => {
     const { formatted, numeric } = normalizeActualPrice(actualPriceInput)
@@ -124,9 +145,11 @@ const statusColorClass = isConverted && convertedStatus
     if (quote) {
       const initialActualPrice = typeof quote.actual_price === 'number' ? quote.actual_price : 0
       const { formatted, numeric } = normalizeActualPrice(initialActualPrice.toString())
+      const normalizedOrderDate = normalizeDateForInput(quote.order_date) || getTodayDateString()
 
       setFormData({
         customer_name: quote.customer_name,
+        order_date: normalizedOrderDate,
         project_summary: quote.project_summary,
         print_type: defaultPrintType,
         status: defaultStatus,
@@ -138,9 +161,11 @@ const statusColorClass = isConverted && convertedStatus
       setActualPriceInput(formatted)
     } else {
       const { formatted, numeric } = normalizeActualPrice('0')
+      const today = getTodayDateString()
 
       setFormData({
         customer_name: '',
+        order_date: today,
         project_summary: '',
         print_type: defaultPrintType,
         status: defaultStatus,
@@ -183,7 +208,7 @@ const statusColorClass = isConverted && convertedStatus
     setError(null)
 
     try {
-      const basePayload = quote ? { ...formData, id: quote.quote_id } : formData
+      const basePayload = quote ? { ...formData, id: quote.quote_id ?? quote.id } : formData
       const payload = { ...basePayload, actual_price: numeric }
       const result = await upsertQuote(payload)
 
@@ -193,6 +218,80 @@ const statusColorClass = isConverted && convertedStatus
         onSave()
         onClose()
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAbandon = async () => {
+    if (!quote || !abandonedStatusId) return
+
+    const { formatted, numeric } = normalizeActualPrice(actualPriceInput)
+    if (formatted !== actualPriceInput) {
+      setActualPriceInput(formatted)
+    }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const payload = {
+        ...formData,
+        status: abandonedStatusId,
+        actual_price: numeric,
+        id: quote.quote_id ?? quote.id
+      }
+      const result = await upsertQuote(payload)
+
+      if (result.error) {
+        setError(result.error)
+      } else {
+        onSave()
+        onClose()
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleConvert = async () => {
+    if (!quote || !convertedStatusId) return
+
+    const { formatted, numeric } = normalizeActualPrice(actualPriceInput)
+    if (formatted !== actualPriceInput) {
+      setActualPriceInput(formatted)
+    }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const payload = {
+        ...formData,
+        status: convertedStatusId,
+        actual_price: numeric,
+        id: quote.quote_id ?? quote.id
+      }
+      const quoteResult = await upsertQuote(payload)
+
+      if (quoteResult.error || !quoteResult.data) {
+        setError(quoteResult.error ?? 'Unable to convert quote.')
+        return
+      }
+
+      const orderResult = await createOrderFromQuote(quoteResult.data, QUEUE_ORDER_STATUS_ID)
+
+      if (orderResult.error) {
+        setError(orderResult.error)
+        return
+      }
+
+      onSave()
+      onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -226,7 +325,7 @@ const statusColorClass = isConverted && convertedStatus
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-md mx-4 ring-1 ring-stone-200 shadow-sm max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-xl mx-4 ring-1 ring-stone-200 shadow-sm max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-stone-900">
             {quote ? 'Edit Quote' : 'Create New Quote'}
@@ -234,9 +333,7 @@ const statusColorClass = isConverted && convertedStatus
           <div
             className={`inline-flex items-center rounded-full px-4 py-1 text-2xl font-semibold capitalize ${statusColorClass}`.trim()}
           >
-            {isConverted && convertedStatus
-              ? convertedStatus.name
-              : selectableQuoteStatuses.find(status => status.quote_status_ref_id === formData.status)?.name || 'Unknown'}
+            {statusLabel}
           </div>
         </div>
 
@@ -244,24 +341,42 @@ const statusColorClass = isConverted && convertedStatus
           <div className="flex-1 space-y-6 overflow-y-auto pr-1 min-h-0">
             {isReadOnly && (
               <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700">
-                Converted quotes are read-only.
+                Converted or abandoned quotes are read-only.
               </div>
             )}
 
-            <div>
-              <label htmlFor="customer_name" className="block text-sm font-semibold text-stone-700 mb-2">
-                Customer Name
-              </label>
-              <input
-                type="text"
-                id="customer_name"
-                name="customer_name"
-                value={formData.customer_name}
-                onChange={handleChange}
-                required
-                disabled={isReadOnly}
-                className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
-              />
+            <div className="sm:flex sm:space-x-4">
+              <div className="sm:w-1/2">
+                <label htmlFor="customer_name" className="block text-sm font-semibold text-stone-700 mb-2">
+                  Customer Name
+                </label>
+                <input
+                  type="text"
+                  id="customer_name"
+                  name="customer_name"
+                  value={formData.customer_name}
+                  onChange={handleChange}
+                  required
+                  disabled={isReadOnly}
+                  className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
+                />
+              </div>
+
+              <div className="mt-6 sm:mt-0 sm:w-1/2">
+                <label htmlFor="order_date" className="block text-sm font-semibold text-stone-700 mb-2">
+                  Order Date
+                </label>
+                <input
+                  type="date"
+                  id="order_date"
+                  name="order_date"
+                  value={formData.order_date}
+                  onChange={handleChange}
+                  required
+                  disabled={isReadOnly}
+                  className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
+                />
+              </div>
             </div>
 
             <div>
@@ -426,14 +541,7 @@ const statusColorClass = isConverted && convertedStatus
             )}
           </div>
 
-          <div className="flex justify-center space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 text-stone-700 bg-stone-200 rounded-lg hover:bg-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-500 transition-colors"
-            >
-              Cancel
-            </button>
+          <div className="flex flex-wrap sm:flex-nowrap justify-center gap-y-3 gap-x-[5px] pt-4">
             {!isReadOnly && (
               <button
                 type="submit"
@@ -442,6 +550,33 @@ const statusColorClass = isConverted && convertedStatus
               >
                 {isLoading ? 'Saving...' : (quote ? 'Update' : 'Create')}
               </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 text-stone-700 bg-stone-200 rounded-lg hover:bg-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-500 transition-colors"
+            >
+              Cancel
+            </button>
+            {canShowActionButtons && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleConvert}
+                  disabled={isReadOnly || !convertedStatusId || isLoading}
+                  className="px-6 py-3 bg-blue-100 text-blue-700 rounded-lg border border-blue-200 disabled:opacity-60"
+                >
+                  Convert
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAbandon}
+                  disabled={isReadOnly || !abandonedStatusId || isLoading}
+                  className="px-6 py-3 bg-red-100 text-red-700 rounded-lg border border-red-200 disabled:opacity-60"
+                >
+                  Abandon
+                </button>
+              </>
             )}
           </div>
         </form>

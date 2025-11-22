@@ -37,7 +37,16 @@ export default function QuotesPage() {
       if (quotesResult.error) {
         setError(quotesResult.error)
       } else {
-        setQuotes(quotesResult.data || [])
+        const sortedQuotes = (quotesResult.data || []).slice().sort((a, b) => {
+          const getTimestamp = (quote: QuoteRow) => {
+            const source = quote.order_date || quote.created_on
+            const time = Date.parse(source || '')
+            return Number.isNaN(time) ? 0 : time
+          }
+
+          return getTimestamp(b) - getTimestamp(a)
+        })
+        setQuotes(sortedQuotes)
       }
 
       if (statusesResult.error) {
@@ -97,6 +106,24 @@ export default function QuotesPage() {
     return `$${value.toFixed(2)}`
   }
 
+  const formatOrderDate = (value?: string | null) => {
+    if (!value) return '—'
+    const datePart = value.split('T')[0]
+    const [yearStr, monthStr, dayStr] = datePart.split('-')
+    const year = Number(yearStr)
+    const month = Number(monthStr)
+    const day = Number(dayStr)
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+      return '—'
+    }
+    const date = new Date(year, month - 1, day)
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -128,15 +155,18 @@ export default function QuotesPage() {
           <table className="min-w-full w-full divide-y divide-stone-200">
             <thead className="bg-stone-50">
               <tr>
-                <th
-                  className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap"
-                >
-                  ID
+                <th className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap">
+                  Status
                 </th>
                 <th
                   className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap"
                 >
                   Customer
+                </th>
+                <th
+                  className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap"
+                >
+                  Order Date
                 </th>
                 <th
                   className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap"
@@ -154,9 +184,6 @@ export default function QuotesPage() {
                 </th>
                 <th className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap">
                   Quoted Price
-                </th>
-                <th className="py-4 px-6 text-left text-sm font-semibold text-stone-700 whitespace-nowrap">
-                  Status
                 </th>
               </tr>
             </thead>
@@ -177,15 +204,20 @@ export default function QuotesPage() {
                       onClick={() => handleRowClick(quote)}
                       className="hover:bg-stone-50 transition-colors cursor-pointer"
                     >
-                      <td
-                        className="py-4 px-6 whitespace-nowrap text-sm font-medium text-stone-900"
-                      >
-                        {quote.quote_id}
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(quote.status)}`}>
+                          {getStatusName(quote.status)}
+                        </span>
                       </td>
                       <td
                         className="py-4 px-6 whitespace-nowrap text-sm text-stone-900"
                       >
                         {quote.customer_name}
+                      </td>
+                      <td
+                        className="py-4 px-6 whitespace-nowrap text-sm text-stone-900"
+                      >
+                        {formatOrderDate(quote.order_date)}
                       </td>
                       <td
                         className="py-4 px-6 text-sm text-stone-900 truncate"
@@ -205,11 +237,6 @@ export default function QuotesPage() {
                       </td>
                       <td className="py-4 px-6 whitespace-nowrap text-sm text-stone-900">
                         {formatCurrency(quote.actual_price)}
-                      </td>
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(quote.status)}`}>
-                          {getStatusName(quote.status)}
-                        </span>
                       </td>
                     </tr>
                   )
