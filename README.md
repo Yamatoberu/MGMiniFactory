@@ -79,11 +79,10 @@ The application expects the following Supabase tables:
 - `updated_on` (timestamp)
 
 ### Orders Table
-- `id` (serial, primary key)
+- `order_id` (serial, primary key)
 - `quote_id` (integer, foreign key)
-- `order_status_id` (integer, foreign key)
+- `status` (integer, foreign key)
 - `created_on` (timestamp)
-- `updated_on` (timestamp)
 
 ### Reference Tables
 - `quote_status_ref` (id, status_name, description)

@@ -21,13 +21,17 @@ export interface QuoteRow {
 }
 
 export interface OrderRow {
-  id: number
+  id?: number
+  order_id?: number
   quote_id: number
   status: number
+  is_paid?: boolean
+  notes?: string | null
   created_on: string
 }
 
 export interface OrderWithQuote extends OrderRow {
+  id: number
   quote: QuoteRow | null
 }
 

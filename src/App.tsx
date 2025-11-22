@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } f
 import { FormEvent, useEffect, useState } from 'react'
 import QuotesPage from './pages/QuotesPage'
 import OrdersPage from './pages/OrdersPage'
+import InstagramCarousel from './components/InstagramCarousel'
 import { loginUser, fetchAuthenticatedUser, logoutSession } from './data/auth'
 import type { UserRecord } from './types'
 
@@ -172,6 +173,8 @@ function HomePage({ isAuthenticated, user }: HomePageProps) {
         </section>
       )}
 
+      <InstagramCarousel />
+
       <div className="grid md:grid-cols-3 gap-6">
         <div className="rounded-2xl bg-white p-6 ring-1 ring-stone-200 shadow-sm hover:ring-[var(--brand)] transition">
           <h3 className="font-semibold text-[var(--brand)]">Fast Quotes</h3>
@@ -198,6 +201,34 @@ function HomePage({ isAuthenticated, user }: HomePageProps) {
           <div>
             <h3 className="font-semibold text-stone-900">Get In Touch</h3>
             <p className="mt-2 text-sm text-stone-600">mgminifactory208@gmail.com</p>
+          </div>
+          <div>
+            <h3 className="font-semibold text-stone-900">Follow Us</h3>
+            <div className="mt-4 flex items-center gap-4">
+              <a
+                href="https://www.instagram.com/mg_mini_factory/"
+                target="_blank"
+                rel="noreferrer"
+                className="text-stone-500 hover:text-[var(--brand)] transition"
+                aria-label="Instagram"
+              >
+                <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 7.3a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4Zm0 7.7a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM17.8 5.2a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z" />
+                  <path d="M21.5 6.7a5.6 5.6 0 0 0-1.5-3.9 5.6 5.6 0 0 0-3.9-1.5c-1.5-.1-6.1-.1-7.6 0a5.6 5.6 0 0 0-3.9 1.5A5.6 5.6 0 0 0 3 6.7c-.1 1.5-.1 6.1 0 7.6a5.6 5.6 0 0 0 1.5 3.9 5.6 5.6 0 0 0 3.9 1.5c1.5.1 6.1.1 7.6 0a5.6 5.6 0 0 0 3.9-1.5 5.6 5.6 0 0 0 1.5-3.9c.1-1.5.1-6 0-7.6Zm-2 9.2a3.1 3.1 0 0 1-1.7 1.7c-1.2.5-4 .4-5.8.4s-4.6.1-5.8-.4a3.1 3.1 0 0 1-1.7-1.7c-.5-1.2-.4-4-.4-5.8 0-1.8-.1-4.6.4-5.8a3.1 3.1 0 0 1 1.7-1.7c1.2-.5 4-.4 5.8-.4s4.6-.1 5.8.4a3.1 3.1 0 0 1 1.7 1.7c.5 1.2.4 4 .4 5.8 0 1.8.1 4.6-.4 5.8Z" />
+                </svg>
+              </a>
+              <a
+                href="https://www.facebook.com/profile.php?id=61576848183106"
+                target="_blank"
+                rel="noreferrer"
+                className="text-stone-500 hover:text-[var(--brand)] transition"
+                aria-label="Facebook"
+              >
+                <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M13.2 21.8v-7.7h2.6l.4-3h-3V9.2c0-.9.3-1.5 1.5-1.5h1.6V5c-.3 0-1.2-.1-2.2-.1-2.1 0-3.6 1.3-3.6 3.7v2.2H8v3h2.5v7.7h2.7Z" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </footer>
