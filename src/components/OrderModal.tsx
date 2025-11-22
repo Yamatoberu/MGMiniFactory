@@ -2,6 +2,29 @@ import React, { useEffect, useState } from 'react'
 import { OrderStatus, OrderWithQuote } from '../types'
 import { updateOrderStatus } from '../data/orders'
 
+const parseCurrencyValue = (value?: number | string | null) => {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const calculateMarginPercentage = (quote: OrderWithQuote['quote']) => {
+  if (!quote) return null
+  const actual = parseCurrencyValue(quote.actual_price)
+  const total = parseCurrencyValue(quote.total_cost)
+  if (actual === null || total === null || actual === 0) {
+    return null
+  }
+  return ((actual - total) / actual) * 100
+}
+
+const getMarginColor = (margin: number) => {
+  if (margin >= 30) return 'bg-emerald-100 text-emerald-800'
+  if (margin >= 25) return 'bg-amber-100 text-amber-800'
+  return 'bg-rose-100 text-rose-700'
+}
+
 interface OrderModalProps {
   isOpen: boolean
   order: OrderWithQuote | null
@@ -74,21 +97,6 @@ export default function OrderModal({
     return `$${numericValue.toFixed(2)}`
   }
 
-  const profitMargin = () => {
-    if (quote?.actual_price == null || quote?.total_cost == null) return '—'
-    const actual = typeof quote.actual_price === 'string'
-      ? Number.parseFloat(quote.actual_price)
-      : quote.actual_price
-    const total = typeof quote.total_cost === 'string'
-      ? Number.parseFloat(quote.total_cost)
-      : quote.total_cost
-    if (!Number.isFinite(actual) || !Number.isFinite(total) || actual === 0) {
-      return '—'
-    }
-    const margin = ((actual - total) / actual) * 100
-    return `${Math.round(margin)}%`
-  }
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl w-full max-w-lg mx-4 ring-1 ring-stone-200 shadow-sm">
@@ -130,7 +138,15 @@ export default function OrderModal({
               </p>
               <p>
                 <span className="font-semibold text-stone-700">Profit Margin:</span>{' '}
-                {profitMargin()}
+                {(() => {
+                  const margin = calculateMarginPercentage(quote)
+                  if (margin === null) return '—'
+                  return (
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMarginColor(margin)}`}>
+                      {`${Math.round(margin)}%`}
+                    </span>
+                  )
+                })()}
               </p>
             </div>
 
