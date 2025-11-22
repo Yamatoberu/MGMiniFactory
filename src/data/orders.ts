@@ -81,8 +81,6 @@ export async function fetchOrders(): Promise<ApiResponse<OrderWithQuote[]>> {
             : typeof paidValue === 'string'
               ? ['true', '1', 't', 'yes'].includes(paidValue.toLowerCase())
               : false
-=======
->>>>>>> refs/remotes/origin/development
 
         return {
           id,
