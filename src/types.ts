@@ -35,6 +35,15 @@ export interface OrderWithQuote extends OrderRow {
   quote: QuoteRow | null
 }
 
+export interface UserProfileRow {
+  id: number
+  auth_user_id: string
+  created_at?: string
+  name?: string | null
+  username?: string | null
+  admin?: boolean | null
+}
+
 // Reference table types
 export interface QuoteStatus {
   quote_status_ref_id: number
@@ -74,10 +83,11 @@ export interface ApiResponse<T> {
 }
 
 export interface UserRecord {
-  id: number
+  id: string
+  email: string
+  profile_id?: number
   created_at?: string
   name?: string | null
   username?: string | null
-  email: string
-  admin: boolean
+  admin?: boolean | null
 }
