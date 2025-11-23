@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { fetchOrders, fetchOrderStatuses } from '../data/orders'
 import { OrderStatus, OrderWithQuote } from '../types'
 import OrderModal from '../components/OrderModal'
@@ -15,6 +15,16 @@ const paidColorMap = {
   false: 'bg-rose-100 text-rose-700',
 }
 
+type DateRangeKey = 'all' | 'mtd' | 'last-month' | 'ytd' | 'last-year'
+
+const DATE_RANGE_OPTIONS: { value: DateRangeKey; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'mtd', label: 'This Month to Date' },
+  { value: 'last-month', label: 'Last Month' },
+  { value: 'ytd', label: 'Year to Date' },
+  { value: 'last-year', label: 'Last Calendar Year' },
+]
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderWithQuote[]>([])
   const [orderStatuses, setOrderStatuses] = useState<OrderStatus[]>([])
@@ -22,6 +32,7 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<OrderWithQuote | null>(null)
+  const [selectedRange, setSelectedRange] = useState<DateRangeKey>('all')
 
   const loadOrders = async () => {
     setIsLoading(true)
@@ -62,6 +73,85 @@ export default function OrdersPage() {
   useEffect(() => {
     loadOrders()
   }, [])
+
+  const startOfDay = (date: Date) => {
+    const copy = new Date(date)
+    copy.setHours(0, 0, 0, 0)
+    return copy
+  }
+
+  const endOfDay = (date: Date) => {
+    const copy = new Date(date)
+    copy.setHours(23, 59, 59, 999)
+    return copy
+  }
+
+  const { start: rangeStart, end: rangeEnd, isAllRange } = useMemo(() => {
+    const now = new Date()
+
+    if (selectedRange === 'all') {
+      return { start: null, end: null, isAllRange: true }
+    }
+
+    if (selectedRange === 'mtd') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1)
+      return { start: startOfDay(start), end: endOfDay(now), isAllRange: false }
+    }
+
+    if (selectedRange === 'last-month') {
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const end = new Date(now.getFullYear(), now.getMonth(), 0)
+      return { start: startOfDay(start), end: endOfDay(end), isAllRange: false }
+    }
+
+    if (selectedRange === 'ytd') {
+      const start = new Date(now.getFullYear(), 0, 1)
+      return { start: startOfDay(start), end: endOfDay(now), isAllRange: false }
+    }
+
+    const start = new Date(now.getFullYear() - 1, 0, 1)
+    const end = new Date(now.getFullYear() - 1, 11, 31)
+    return { start: startOfDay(start), end: endOfDay(end), isAllRange: false }
+  }, [selectedRange])
+
+  const filteredOrders = useMemo(() => {
+    if (isAllRange || !rangeStart || !rangeEnd) {
+      return orders
+    }
+
+    return orders.filter((order) => {
+      const sourceDate = order.quote?.order_date ?? order.created_on
+      if (!sourceDate) return false
+      const timestamp = Date.parse(sourceDate)
+      if (Number.isNaN(timestamp)) return false
+      const orderDate = new Date(timestamp)
+      return orderDate >= rangeStart && orderDate <= rangeEnd
+    })
+  }, [orders, rangeStart, rangeEnd, isAllRange])
+
+  const { displayStart, displayEnd } = useMemo(() => {
+    if (!isAllRange || !orders.length) {
+      return { displayStart: rangeStart, displayEnd: rangeEnd }
+    }
+
+    const timestamps = orders
+      .map((order) => {
+        const sourceDate = order.quote?.order_date ?? order.created_on
+        if (!sourceDate) return null
+        const timestamp = Date.parse(sourceDate)
+        return Number.isNaN(timestamp) ? null : timestamp
+      })
+      .filter((value): value is number => value !== null)
+
+    if (timestamps.length === 0) {
+      return { displayStart: null, displayEnd: null }
+    }
+
+    return {
+      displayStart: new Date(Math.min(...timestamps)),
+      displayEnd: new Date(Math.max(...timestamps)),
+    }
+  }, [isAllRange, orders, rangeStart, rangeEnd])
 
   const getStatusName = (statusId: number) => {
     const status = orderStatuses.find((s) => s.id === statusId)
@@ -157,6 +247,36 @@ const formatOrderDate = (value?: string | null) => {
         </div>
       )}
 
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white px-4 py-3 ring-1 ring-stone-200 shadow-sm">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-stone-500 font-semibold">Date Range</p>
+          <p className="text-stone-900 font-semibold">
+            {DATE_RANGE_OPTIONS.find((option) => option.value === selectedRange)?.label}
+          </p>
+          <p className="text-sm text-stone-500">
+            {displayStart ? displayStart.toLocaleDateString() : '—'} –{' '}
+            {displayEnd ? displayEnd.toLocaleDateString() : '—'}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label htmlFor="orders-range-filter" className="text-sm font-medium text-stone-600">
+            Filter
+          </label>
+          <select
+            id="orders-range-filter"
+            value={selectedRange}
+            onChange={(event) => setSelectedRange(event.target.value as DateRangeKey)}
+            className="rounded-2xl border border-stone-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
+          >
+            {DATE_RANGE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="bg-white shadow-sm sm:rounded-2xl ring-1 ring-stone-200">
         <div className="overflow-x-auto">
           <table className="min-w-full w-full divide-y divide-stone-200">
@@ -189,14 +309,14 @@ const formatOrderDate = (value?: string | null) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-stone-200">
-              {orders.length === 0 ? (
+              {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                    No orders have been created yet
+                    No orders found for this range
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => {
+                filteredOrders.map((order) => {
                   const quote = order.quote
                   return (
                     <tr

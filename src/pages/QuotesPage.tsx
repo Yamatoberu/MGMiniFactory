@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { QuoteRow, QuoteStatus, PrintType } from '../types'
 import { fetchQuotes, fetchQuoteStatuses, fetchPrintTypes } from '../data/quotes'
 import QuoteModal from '../components/QuoteModal'
@@ -15,6 +15,16 @@ const printTypeColorMap: Record<string, string> = {
   fdm: 'bg-amber-100 text-amber-800',
 }
 
+type DateRangeKey = 'all' | 'mtd' | 'last-month' | 'ytd' | 'last-year'
+
+const DATE_RANGE_OPTIONS: { value: DateRangeKey; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'mtd', label: 'This Month to Date' },
+  { value: 'last-month', label: 'Last Month' },
+  { value: 'ytd', label: 'Year to Date' },
+  { value: 'last-year', label: 'Last Calendar Year' },
+]
+
 export default function QuotesPage() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([])
   const [quoteStatuses, setQuoteStatuses] = useState<QuoteStatus[]>([])
@@ -23,6 +33,7 @@ export default function QuotesPage() {
   const [editingQuote, setEditingQuote] = useState<QuoteRow | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedRange, setSelectedRange] = useState<DateRangeKey>('all')
   const loadQuotes = async () => {
     setIsLoading(true)
     setError(null)
@@ -70,6 +81,85 @@ export default function QuotesPage() {
   useEffect(() => {
     loadQuotes()
   }, [])
+
+  const startOfDay = (date: Date) => {
+    const copy = new Date(date)
+    copy.setHours(0, 0, 0, 0)
+    return copy
+  }
+
+  const endOfDay = (date: Date) => {
+    const copy = new Date(date)
+    copy.setHours(23, 59, 59, 999)
+    return copy
+  }
+
+  const { rangeStart, rangeEnd, isAllRange } = useMemo(() => {
+    const now = new Date()
+
+    if (selectedRange === 'all') {
+      return { rangeStart: null, rangeEnd: null, isAllRange: true }
+    }
+
+    if (selectedRange === 'mtd') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1)
+      return { rangeStart: startOfDay(start), rangeEnd: endOfDay(now), isAllRange: false }
+    }
+
+    if (selectedRange === 'last-month') {
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const end = new Date(now.getFullYear(), now.getMonth(), 0)
+      return { rangeStart: startOfDay(start), rangeEnd: endOfDay(end), isAllRange: false }
+    }
+
+    if (selectedRange === 'ytd') {
+      const start = new Date(now.getFullYear(), 0, 1)
+      return { rangeStart: startOfDay(start), rangeEnd: endOfDay(now), isAllRange: false }
+    }
+
+    const start = new Date(now.getFullYear() - 1, 0, 1)
+    const end = new Date(now.getFullYear() - 1, 11, 31)
+    return { rangeStart: startOfDay(start), rangeEnd: endOfDay(end), isAllRange: false }
+  }, [selectedRange])
+
+  const filteredQuotes = useMemo(() => {
+    if (isAllRange || !rangeStart || !rangeEnd) {
+      return quotes
+    }
+
+    return quotes.filter((quote) => {
+      const source = quote.order_date || quote.created_on
+      if (!source) return false
+      const timestamp = Date.parse(source)
+      if (Number.isNaN(timestamp)) return false
+      const date = new Date(timestamp)
+      return date >= rangeStart && date <= rangeEnd
+    })
+  }, [quotes, rangeStart, rangeEnd, isAllRange])
+
+  const { displayStart, displayEnd } = useMemo(() => {
+    if (!isAllRange || !quotes.length) {
+      return { displayStart: rangeStart, displayEnd: rangeEnd }
+    }
+
+    const timestamps = quotes
+      .map((quote) => {
+        const source = quote.order_date || quote.created_on
+        if (!source) return null
+        const timestamp = Date.parse(source)
+        return Number.isNaN(timestamp) ? null : timestamp
+      })
+      .filter((value): value is number => value !== null)
+
+    if (timestamps.length === 0) {
+      return { displayStart: null, displayEnd: null }
+    }
+
+    return {
+      displayStart: new Date(Math.min(...timestamps)),
+      displayEnd: new Date(Math.max(...timestamps)),
+    }
+  }, [isAllRange, quotes, rangeStart, rangeEnd])
 
   const handleCreateQuote = () => {
     setEditingQuote(null)
@@ -150,6 +240,36 @@ export default function QuotesPage() {
         </div>
       )}
 
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white px-4 py-3 ring-1 ring-stone-200 shadow-sm">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-stone-500 font-semibold">Date Range</p>
+          <p className="text-stone-900 font-semibold">
+            {DATE_RANGE_OPTIONS.find((option) => option.value === selectedRange)?.label}
+          </p>
+          <p className="text-sm text-stone-500">
+            {displayStart ? displayStart.toLocaleDateString() : '—'} –{' '}
+            {displayEnd ? displayEnd.toLocaleDateString() : '—'}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label htmlFor="quotes-range-filter" className="text-sm font-medium text-stone-600">
+            Filter
+          </label>
+          <select
+            id="quotes-range-filter"
+            value={selectedRange}
+            onChange={(event) => setSelectedRange(event.target.value as DateRangeKey)}
+            className="rounded-2xl border border-stone-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
+          >
+            {DATE_RANGE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="bg-white shadow-sm sm:rounded-2xl ring-1 ring-stone-200">
         <div className="overflow-x-auto">
           <table className="min-w-full w-full divide-y divide-stone-200">
@@ -188,14 +308,14 @@ export default function QuotesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-stone-200">
-              {quotes.length === 0 ? (
+              {filteredQuotes.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-4 px-4 text-center text-gray-500">
-                    No active quotes found
+                    No quotes found for this range
                   </td>
                 </tr>
               ) : (
-                quotes.map(quote => {
+                filteredQuotes.map(quote => {
                   const printTypeName = getPrintTypeName(quote.print_type)
 
                   return (

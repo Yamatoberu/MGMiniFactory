@@ -106,21 +106,19 @@ export async function createOrderFromQuote(
   initialOrderStatusId: number = 1 // Default to Queue status
 ): Promise<ApiResponse<OrderRow>> {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('orders')
       .insert({
         quote_id: quote.id ?? quote.quote_id,
         status: initialOrderStatusId,
         created_on: new Date().toISOString()
       })
-      .select()
-      .single()
 
     if (error) {
       return { data: null, error: error.message }
     }
 
-    return { data: data as OrderRow, error: null }
+    return { data: null, error: null }
   } catch (error) {
     return { data: null, error: error instanceof Error ? error.message : 'Unknown error' }
   }
@@ -173,13 +171,14 @@ export async function updateOrderStatus(
       .update(payload)
       .eq('order_id', orderId)
       .select()
-      .single()
 
     if (error) {
       return { data: null, error: error.message }
     }
 
-    return { data: data as OrderRow, error: null }
+    const updatedOrder = Array.isArray(data) ? data[0] ?? null : (data as OrderRow | null)
+
+    return { data: updatedOrder, error: null }
   } catch (error) {
     return { data: null, error: error instanceof Error ? error.message : 'Unknown error' }
   }

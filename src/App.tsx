@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } f
 import { FormEvent, useEffect, useState } from 'react'
 import QuotesPage from './pages/QuotesPage'
 import OrdersPage from './pages/OrdersPage'
-import FinancesPage from './pages/FinancesPage'
+import DashboardPage from './pages/DashboardPage'
 import { loginUser, fetchAuthenticatedUser, logoutSession } from './data/auth'
 import type { UserRecord } from './types'
 
@@ -50,17 +50,17 @@ function Navigation({ isAuthenticated, user, onLogout, onLoginClick }: Navigatio
             </Link>
             {isAuthenticated && (
               <>
+                <Link
+                  to="/dashboard"
+                  className={`hover:text-[var(--brand)] ${isActive('/dashboard') ? 'text-[var(--brand)]' : ''}`}
+                >
+                  Dashboard
+                </Link>
                 <Link to="/quotes" className={`hover:text-[var(--brand)] ${isActive('/quotes') ? 'text-[var(--brand)]' : ''}`}>
                   Quotes
                 </Link>
                 <Link to="/orders" className={`hover:text-[var(--brand)] ${isActive('/orders') ? 'text-[var(--brand)]' : ''}`}>
                   Orders
-                </Link>
-                <Link
-                  to="/finances"
-                  className={`hover:text-[var(--brand)] ${isActive('/finances') ? 'text-[var(--brand)]' : ''}`}
-                >
-                  Finances
                 </Link>
               </>
             )}
@@ -380,8 +380,8 @@ function App() {
               element={isAuthenticated ? <OrdersPage /> : <Navigate to="/" replace />}
             />
             <Route
-              path="/finances"
-              element={isAuthenticated ? <FinancesPage /> : <Navigate to="/" replace />}
+              path="/dashboard"
+              element={isAuthenticated ? <DashboardPage /> : <Navigate to="/" replace />}
             />
           </Routes>
         </main>
