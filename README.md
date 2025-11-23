@@ -1,154 +1,102 @@
-# MG Mini Factory - Admin Dashboard
+# MG Mini Factory – Admin Dashboard
 
-A modern admin dashboard for MG Mini Factory built with React, TypeScript, TailwindCSS, and Supabase.
+React + Supabase dashboard that lets the MG Mini Factory team manage quotes, convert them into tracked orders, and monitor production finances in real time.
 
-## Features
-
-### ✅ Implemented
-- **Quotes Management**: Create, edit, and view quotes with customer details, project summary, costs, and time estimates
-- **Quote to Order Conversion**: Convert quotes to orders with a single click
-- **Responsive Design**: Modern UI with TailwindCSS and brand color (#B85C21)
-- **Real-time Data**: Supabase integration for data persistence
-- **Modal Forms**: Clean modal interface for creating and editing quotes
-
-### 🚧 Planned
-- Orders management page
-- Print queue tracking
-- Dashboard with key metrics
-- Admin authentication
+## Highlights
+- **Secure workspace** – Supabase email/password auth wraps every operational screen, with sessions restored from Supabase on load.
+- **Quotes workspace** – Filter by rolling date ranges, open quotes in a modal, auto-calculate material/print/labor costs, see suggested pricing, and convert or abandon quotes with one click.
+- **Order tracking** – Orders pull in quote data, expose payment + status badges, show instant margin calculations, and allow inline updates via the Order modal.
+- **Dashboard insights** – Finance dashboard aggregates revenue, costs, and margins for any date range with card-level breakdowns and trend-friendly formatting.
+- **Responsive UI** – TailwindCSS handling keeps the admin usable on widescreen desktops down to tablets without additional tweaking.
 
 ## Tech Stack
-
-- **Frontend**: React 18, TypeScript, Vite
-- **Styling**: TailwindCSS
-- **Backend**: Supabase
-- **Routing**: React Router v6
+- **Framework**: React 18 + TypeScript + Vite
+- **UI**: TailwindCSS
+- **State/Data**: Hooks, Supabase client SDK, React Router v6
+- **Auth & Data**: Supabase Auth, tables, and row-level APIs
 
 ## Getting Started
 
 ### Prerequisites
+- Node.js 18+
+- npm (ships with Node)
+- Supabase project seeded with the tables below
 
-- Node.js 18+ 
-- npm or yarn
-- Supabase project with the required schema
+### Setup
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+2. **Copy environment template**
+   ```bash
+   cp env.example .env.local
+   ```
+3. **Add Supabase credentials**  
+   `lib/supabase.ts` expects the standard Vite env names:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+4. **Run the dev server**
+   ```bash
+   npm run dev
+   ```
+   Visit [http://localhost:5173](http://localhost:5173) and sign in with a Supabase user that exists in the `users` table.
 
-### Installation
-
-1. Clone the repository
+### Production Builds
 ```bash
-git clone <repository-url>
-cd MGMiniFactory
+npm run build   # type-check + Vite build
+npm run preview # serve the build locally
 ```
 
-2. Install dependencies
-```bash
-npm install
-```
+## Supabase Schema
 
-3. Set up environment variables
-```bash
-cp env.example .env.local
-```
+| Table | Purpose | Notable Columns |
+| --- | --- | --- |
+| `quotes` | Source of truth for every quote and its costing breakdown. | `quote_id` (PK), `customer_name`, `order_date`, `project_summary`, `print_type`, `material_cost`, `print_time`, `labor_time`, `print_cost`, `labor_cost`, `total_cost`, `suggested_price`, `actual_price`, `status`, `quote_status_id`, `created_on`, `updated_on` |
+| `orders` | Tracks converted quotes moving through fulfillment. | `order_id` (PK), `quote_id` (FK to `quotes`), `status` (FK to `order_status_ref`), `is_paid`, `notes`, `created_on` |
+| `quote_status_ref` | Allowed quote states rendered inside QuoteModal. | `quote_status_ref_id`, `name`, `description` |
+| `order_status_ref` | Allowed order pipeline statuses. | `order_status_ref_id`, `status_name`, `description` |
+| `print_type_ref` | Defines per-type power + maintenance cost that feed price calculations. | `print_type_id`, `name`, `power_cost`, `maintenance_cost` |
+| `users` | Profile metadata tied to Supabase Auth users displayed in the header. | `id`, `auth_user_id`, `name`, `username`, `admin` |
 
-4. Configure your Supabase credentials in `.env.local`:
-```env
-VITE_SUPABASE_URL=your_supabase_url_here
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-```
+> 🔐 Row-Level Security should allow the service role used by the Vite app to read/write the rows listed above. The data layer normalizes API responses so column aliases like `quote_status_ref_id`/`id` work seamlessly.
 
-5. Start the development server
-```bash
-npm run dev
-```
-
-6. Open [http://localhost:5173](http://localhost:5173) in your browser
-
-## Database Schema
-
-The application expects the following Supabase tables:
-
-### Quotes Table
-- `id` (serial, primary key)
-- `customer_name` (text)
-- `project_summary` (text)
-- `material_cost` (numeric)
-- `print_time` (numeric)
-- `labor_time` (numeric)
-- `quote_status_id` (integer, foreign key)
-- `created_on` (timestamp)
-- `updated_on` (timestamp)
-
-### Orders Table
-- `order_id` (serial, primary key)
-- `quote_id` (integer, foreign key)
-- `status` (integer, foreign key)
-- `created_on` (timestamp)
-
-### Reference Tables
-- `quote_status_ref` (id, status_name, description)
-- `order_status_ref` (id, status_name, description)
-- `print_type_ref` (id, type_name, description)
-
-## Usage
-
-### Managing Quotes
-1. Navigate to the Quotes page
-2. Click "Create Quote" to add a new quote
-3. Fill in customer details, project summary, and cost/time estimates
-4. Save the quote (defaults to "Draft" status)
-5. Edit quotes by clicking the "Edit" button
-6. Convert quotes to orders using "Convert → Order" button
-
-### Quote Statuses
-- **Draft**: New quotes start in draft status
-- **Converted**: Quotes that have been converted to orders
-
-### Order Statuses
-- **Queue**: New orders start in queue
-- **Printing**: Orders currently being printed
-- **Ready for Pickup**: Completed orders ready for customer pickup
-- **Complete**: Orders that have been picked up
+## Application Tour
+- **Navigation & Auth** – Global nav is aware of the current route and toggles quote/order/dashboard links only after Supabase says the user is logged in. Sessions persist in `localStorage`.
+- **Quotes page (`/quotes`)** – Date-range filter, status + print-type pills, currency formatting, and the Quote modal with auto-calculated costs, suggested price, abandon, and convert actions. Converting a quote both marks it as Converted and creates an Order in the Queue status.
+- **Orders page (`/orders`)** – Mirrors the date filter, shows paid/unpaid chips, profit margin indicators, and opens the Order modal where status, payment flag, and notes update Supabase instantly.
+- **Dashboard (`/dashboard`)** – Re-uses order data to sum revenue, expenses, and margin plus counts of received/completed orders. Color-coded margin card makes profitability obvious.
 
 ## Project Structure
-
 ```
 src/
+├── App.tsx
 ├── components/
-│   └── QuoteModal.tsx          # Modal for creating/editing quotes
+│   ├── OrderModal.tsx
+│   └── QuoteModal.tsx
 ├── data/
-│   ├── quotes.ts               # Quote data access functions
-│   └── orders.ts               # Order data access functions
+│   ├── auth.ts        # Supabase auth helpers
+│   ├── orders.ts      # Order queries + mutations
+│   └── quotes.ts      # Quote queries + upserts
 ├── pages/
-│   ├── QuotesPage.tsx          # Main quotes management page
-│   └── OrdersPage.tsx          # Orders page (placeholder)
-├── types.ts                    # TypeScript type definitions
-├── App.tsx                     # Main app component with routing
-└── main.tsx                    # App entry point
+│   ├── DashboardPage.tsx
+│   ├── OrdersPage.tsx
+│   └── QuotesPage.tsx
+├── types.ts           # Shared app + DB types
+└── main.tsx
 
 lib/
-└── supabase.ts                 # Supabase client configuration
+└── supabase.ts        # Supabase client bootstrap
 ```
 
-## Development
+## Development Scripts
+- `npm run dev` – start Vite in dev mode
+- `npm run build` – type-check and produce a production bundle
+- `npm run preview` – serve the latest build
+- `npm run lint` – run ESLint across the repo
 
-### Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-
-### Code Style
-
-The project uses ESLint and Prettier for code formatting. Make sure to run `npm run lint` before committing changes.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
+Run `npm run lint` before committing to keep formatting and hooks consistent.
 
 ## License
 
