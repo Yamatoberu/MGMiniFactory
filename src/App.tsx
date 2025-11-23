@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } f
 import { FormEvent, useEffect, useState } from 'react'
 import QuotesPage from './pages/QuotesPage'
 import OrdersPage from './pages/OrdersPage'
+import FinancesPage from './pages/FinancesPage'
 import { loginUser, fetchAuthenticatedUser, logoutSession } from './data/auth'
 import type { UserRecord } from './types'
 
@@ -54,6 +55,12 @@ function Navigation({ isAuthenticated, user, onLogout, onLoginClick }: Navigatio
                 </Link>
                 <Link to="/orders" className={`hover:text-[var(--brand)] ${isActive('/orders') ? 'text-[var(--brand)]' : ''}`}>
                   Orders
+                </Link>
+                <Link
+                  to="/finances"
+                  className={`hover:text-[var(--brand)] ${isActive('/finances') ? 'text-[var(--brand)]' : ''}`}
+                >
+                  Finances
                 </Link>
               </>
             )}
@@ -371,6 +378,10 @@ function App() {
             <Route
               path="/orders"
               element={isAuthenticated ? <OrdersPage /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/finances"
+              element={isAuthenticated ? <FinancesPage /> : <Navigate to="/" replace />}
             />
           </Routes>
         </main>
