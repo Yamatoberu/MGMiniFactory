@@ -36,7 +36,15 @@ export default function OrdersPage() {
       if (ordersResult.error) {
         setError(ordersResult.error)
       } else {
-        setOrders(ordersResult.data || [])
+        const sortedOrders = (ordersResult.data || []).slice().sort((a, b) => {
+          const getTimestamp = (order: OrderWithQuote) => {
+            const source = order.quote?.order_date || order.created_on
+            const time = source ? Date.parse(source) : Number.NaN
+            return Number.isNaN(time) ? 0 : time
+          }
+          return getTimestamp(b) - getTimestamp(a)
+        })
+        setOrders(sortedOrders)
       }
 
       if (statusesResult.error) {
@@ -64,16 +72,50 @@ export default function OrdersPage() {
     return statusColorMap[statusId] || 'bg-stone-100 text-stone-800'
   }
 
-  const getPaidColor = (paid?: boolean) => {
-    return paid ? paidColorMap.true : paidColorMap.false
-  }
+const getPaidColor = (paid?: boolean) => {
+  return paid ? paidColorMap.true : paidColorMap.false
+}
 
-  const formatCurrency = (value: number | string | null | undefined) => {
-    if (value === null || value === undefined) return '—'
-    const numericValue = typeof value === 'string' ? Number.parseFloat(value) : value
-    if (Number.isNaN(numericValue)) return '—'
-    return `$${numericValue.toFixed(2)}`
+const parseCurrencyValue = (value?: number | string | null) => {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const calculateMarginPercentage = (quote: OrderWithQuote['quote']) => {
+  if (!quote) return null
+  const actual = parseCurrencyValue(quote.actual_price)
+  const total = parseCurrencyValue(quote.total_cost)
+  if (actual === null || total === null || actual === 0) {
+    return null
   }
+  return ((actual - total) / actual) * 100
+}
+
+const getMarginColor = (margin: number) => {
+  if (margin >= 30) return 'bg-emerald-100 text-emerald-800'
+  if (margin >= 25) return 'bg-amber-100 text-amber-800'
+  return 'bg-rose-100 text-rose-700'
+}
+
+const formatCurrency = (value: number | string | null | undefined) => {
+  if (value === null || value === undefined) return '—'
+  const numericValue = typeof value === 'string' ? Number.parseFloat(value) : value
+  if (Number.isNaN(numericValue)) return '—'
+  return `$${numericValue.toFixed(2)}`
+}
+
+const formatOrderDate = (value?: string | null) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
 
   const handleEditOrder = (order: OrderWithQuote) => {
     setSelectedOrder(order)
@@ -115,93 +157,96 @@ export default function OrdersPage() {
         </div>
       )}
 
-      <div className="bg-white shadow-sm overflow-hidden sm:rounded-2xl ring-1 ring-stone-200">
-        <table className="min-w-full divide-y divide-stone-200">
-          <thead className="bg-stone-50">
-            <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
-                Status
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
-                Paid
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
-                Customer
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
-                Summary
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
-                Price
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
-                Cost
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
-                Margin
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-stone-200">
-            {orders.length === 0 ? (
+      <div className="bg-white shadow-sm sm:rounded-2xl ring-1 ring-stone-200">
+        <div className="overflow-x-auto">
+          <table className="min-w-full w-full divide-y divide-stone-200">
+            <thead className="bg-stone-50">
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                  No orders have been created yet
-                </td>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
+                  Paid
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
+                  Customer
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
+                  Summary
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
+                  Order Date
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
+                  Price
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
+                  Cost
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-stone-700">
+                  Margin
+                </th>
               </tr>
-            ) : (
-              orders.map((order) => {
-                const quote = order.quote
-                return (
-                  <tr
-                    key={order.id}
-                    onClick={() => handleEditOrder(order)}
-                    className="hover:bg-stone-50 transition-colors cursor-pointer"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                        {getStatusName(order.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaidColor(order.is_paid)}`}>
-                        {order.is_paid ? 'True' : 'False'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
-                      {quote?.customer_name ?? 'Unknown customer'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-stone-900 max-w-xs truncate">
-                      {quote?.project_summary ?? '—'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
-                      {formatCurrency(quote?.actual_price)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
-                      {formatCurrency(quote?.total_cost)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
-                      {(() => {
-                        if (quote?.actual_price == null || quote?.total_cost == null) return '—'
-                        const actual = typeof quote.actual_price === 'string'
-                          ? Number.parseFloat(quote.actual_price)
-                          : quote.actual_price
-                        const total = typeof quote.total_cost === 'string'
-                          ? Number.parseFloat(quote.total_cost)
-                          : quote.total_cost
-                        if (!Number.isFinite(actual) || !Number.isFinite(total) || actual === 0) {
-                          return '—'
-                        }
-                        const margin = ((actual - total) / actual) * 100
-                        return `${Math.round(margin)}%`
-                      })()}
-                    </td>
+            </thead>
+            <tbody className="bg-white divide-y divide-stone-200">
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                    No orders have been created yet
+                  </td>
+                </tr>
+              ) : (
+                orders.map((order) => {
+                  const quote = order.quote
+                  return (
+                    <tr
+                      key={order.id}
+                      onClick={() => handleEditOrder(order)}
+                      className="hover:bg-stone-50 transition-colors cursor-pointer"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                          {getStatusName(order.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaidColor(order.is_paid)}`}>
+                          {order.is_paid ? 'True' : 'False'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
+                        {quote?.customer_name ?? 'Unknown customer'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-stone-900 max-w-xs truncate">
+                        {quote?.project_summary ?? '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
+                        {formatOrderDate(quote?.order_date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
+                        {formatCurrency(quote?.actual_price)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
+                        {formatCurrency(quote?.total_cost)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
+                        {(() => {
+                          const margin = calculateMarginPercentage(quote)
+                          if (margin === null) return '—'
+                          return (
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMarginColor(margin)}`}>
+                              {`${Math.round(margin)}%`}
+                            </span>
+                          )
+                        })()}
+                      </td>
                   </tr>
                 )
               })
             )}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <OrderModal
