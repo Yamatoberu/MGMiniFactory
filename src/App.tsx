@@ -26,7 +26,7 @@ type HomePageProps = {
 }
 
 type LoginFormProps = {
-  onLogin: (username: string, password: string) => Promise<LoginResult>
+  onLogin: (email: string, password: string) => Promise<LoginResult>
 }
 
 function Navigation({ isAuthenticated, user, onLogout, onLoginClick }: NavigationProps) {
@@ -88,7 +88,7 @@ function Navigation({ isAuthenticated, user, onLogout, onLoginClick }: Navigatio
 }
 
 function LoginForm({ onLogin }: LoginFormProps) {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -99,13 +99,13 @@ function LoginForm({ onLogin }: LoginFormProps) {
     setIsSubmitting(true)
 
     try {
-      const result = await onLogin(username.trim(), password)
+      const result = await onLogin(email.trim(), password)
       if (!result.success) {
         setError(result.message ?? 'Unable to log in')
         return
       }
 
-      setUsername('')
+      setEmail('')
       setPassword('')
       setError(null)
     } finally {
@@ -116,16 +116,16 @@ function LoginForm({ onLogin }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="username" className="block text-sm font-medium text-stone-700">
-          Username
+        <label htmlFor="email" className="block text-sm font-medium text-stone-700">
+          Email
         </label>
         <input
-          id="username"
-          type="text"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
+          id="email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
           className="mt-1 w-full rounded-xl border border-stone-200 px-4 py-3 text-base shadow-sm focus:border-[var(--brand)] focus:ring-[var(--brand)]"
-          placeholder="yourusername"
+          placeholder="you@example.com"
           required
         />
       </div>
@@ -260,7 +260,7 @@ function LoginModal({
 }: {
   isOpen: boolean
   onClose: () => void
-  onLogin: (username: string, password: string) => Promise<LoginResult>
+  onLogin: (email: string, password: string) => Promise<LoginResult>
 }) {
   if (!isOpen) return null
 
@@ -297,22 +297,14 @@ function App() {
   useEffect(() => {
     let isMounted = true
 
-    const storedUser = getStoredUser()
-
-    if (!storedUser) {
-      persistUser(null)
-      setUser(null)
-      return () => {
-        isMounted = false
-      }
-    }
-
     const restore = async () => {
-      const { data, error } = await fetchAuthenticatedUser(storedUser.id)
+      const { data, error } = await fetchAuthenticatedUser()
       if (!isMounted) return
 
       if (error) {
         console.error('Failed to refresh stored session', error)
+        setUser(null)
+        persistUser(null)
         return
       }
 
@@ -332,12 +324,12 @@ function App() {
     }
   }, [])
 
-  const handleLogin = async (username: string, password: string): Promise<LoginResult> => {
-    if (!username || !password) {
-      return { success: false, message: 'Please provide both username and password.' }
+  const handleLogin = async (email: string, password: string): Promise<LoginResult> => {
+    if (!email || !password) {
+      return { success: false, message: 'Please provide both email and password.' }
     }
 
-    const { data, error } = await loginUser(username, password)
+    const { data, error } = await loginUser(email, password)
 
     if (error || !data) {
       return { success: false, message: error ?? 'Invalid username or password.' }
