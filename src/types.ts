@@ -5,6 +5,7 @@ export interface QuoteRow {
   customer_name: string
   order_date?: string | null
   project_summary: string
+  source?: string | null
   print_type: number
   material_cost: number
   print_time: number
@@ -68,6 +69,7 @@ export interface QuoteFormData {
   customer_name: string
   order_date: string
   project_summary: string
+  source: string
   print_type: number
   status: number
   material_cost: number

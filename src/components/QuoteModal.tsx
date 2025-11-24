@@ -23,6 +23,7 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
     customer_name: '',
     order_date: getTodayDateString(),
     project_summary: '',
+    source: '',
     print_type: 0,
     status: 0,
     material_cost: 0,
@@ -151,6 +152,7 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
         customer_name: quote.customer_name,
         order_date: normalizedOrderDate,
         project_summary: quote.project_summary,
+        source: quote.source ?? '',
         print_type: defaultPrintType,
         status: defaultStatus,
         material_cost: quote.material_cost,
@@ -167,6 +169,7 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
         customer_name: '',
         order_date: today,
         project_summary: '',
+        source: '',
         print_type: defaultPrintType,
         status: defaultStatus,
         material_cost: 0,
@@ -390,6 +393,21 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
                 onChange={handleChange}
                 required
                 rows={3}
+                disabled={isReadOnly}
+                className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
+              />
+            </div>
+            <div>
+              <label htmlFor="source" className="block text-sm font-semibold text-stone-700 mb-2">
+                File Source (optional)
+              </label>
+              <input
+                type="text"
+                id="source"
+                name="source"
+                placeholder="Paste a link or add a quick note"
+                value={formData.source}
+                onChange={handleChange}
                 disabled={isReadOnly}
                 className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
               />
