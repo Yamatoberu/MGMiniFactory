@@ -21,6 +21,7 @@ interface QuoteModalProps {
 export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes, quoteStatuses }: QuoteModalProps) {
   const [formData, setFormData] = useState<QuoteFormData>({
     customer_name: '',
+    email_address: '',
     order_date: getTodayDateString(),
     project_summary: '',
     source: '',
@@ -150,6 +151,7 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
 
       setFormData({
         customer_name: quote.customer_name,
+        email_address: quote.email_address ?? '',
         order_date: normalizedOrderDate,
         project_summary: quote.project_summary,
         source: quote.source ?? '',
@@ -167,6 +169,7 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
 
       setFormData({
         customer_name: '',
+        email_address: '',
         order_date: today,
         project_summary: '',
         source: '',
@@ -380,6 +383,21 @@ export default function QuoteModal({ isOpen, onClose, onSave, quote, printTypes,
                   className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
                 />
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="email_address" className="block text-sm font-semibold text-stone-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email_address"
+                name="email_address"
+                value={formData.email_address}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-colors"
+              />
             </div>
 
             <div>

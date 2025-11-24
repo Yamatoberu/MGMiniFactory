@@ -3,6 +3,7 @@ export interface QuoteRow {
   id: number
   quote_id?: number
   customer_name: string
+  email_address?: string | null
   order_date?: string | null
   project_summary: string
   source?: string | null
@@ -67,6 +68,7 @@ export interface PrintType {
 // Form types
 export interface QuoteFormData {
   customer_name: string
+  email_address: string
   order_date: string
   project_summary: string
   source: string

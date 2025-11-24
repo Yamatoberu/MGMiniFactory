@@ -59,9 +59,11 @@ export async function upsertQuote(payload: QuoteFormData & { id?: number }): Pro
     var calc_total_cost = payload.material_cost + calc_print_cost + calc_labor_cost
     var calc_suggested_price = calc_total_cost / .7
     const normalizedSource = typeof payload.source === 'string' ? payload.source.trim() : ''
+    const normalizedEmail = typeof payload.email_address === 'string' ? payload.email_address.trim() : ''
 
     const quoteData = {
       customer_name: payload.customer_name,
+      email_address: normalizedEmail.length > 0 ? normalizedEmail : null,
       order_date: payload.order_date,
       project_summary: payload.project_summary,
       source: normalizedSource.length > 0 ? normalizedSource : null,
