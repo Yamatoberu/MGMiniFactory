@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage'
 import { loginUser, fetchAuthenticatedUser, logoutSession } from './data/auth'
 import { fetchPrintTypes, fetchQuoteStatuses, upsertQuote, fetchQuotes } from './data/quotes'
 import type { UserRecord, QuoteStatus, PrintType } from './types'
+import logo from './assets/logo.png'
 
 type AuthUser = UserRecord
 
@@ -44,8 +45,8 @@ function Navigation({ isAuthenticated, user, onLogout, onLoginClick }: Navigatio
     <header className="border-b border-stone-200 bg-white/95 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-28 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <img src="/logo.png" alt="MG Mini Factory" className="h-16 w-auto" />
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <img src={logo} alt="MG Mini Factory" className="h-[5.5rem] w-auto flex-shrink-0 max-w-none" />
           </div>
           <nav className="flex items-center gap-10 text-stone-700 font-medium text-2xl">
             <Link to="/" className={`hover:text-[var(--brand)] ${isActive('/') ? 'text-[var(--brand)]' : ''}`}>
