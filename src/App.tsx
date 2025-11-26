@@ -36,40 +36,42 @@ type LoginFormProps = {
 
 function Navigation({ isAuthenticated, user, onLogout, onLoginClick }: NavigationProps) {
   const location = useLocation()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const isActive = (path: string) => {
     return location.pathname === path
   }
 
+  useEffect(() => {
+    setIsMenuOpen(false)
+  }, [location.pathname])
+
+  const navItems = [
+    { to: '/', label: 'Home', requiresAuth: false },
+    { to: '/dashboard', label: 'Dashboard', requiresAuth: true },
+    { to: '/quotes', label: 'Quotes', requiresAuth: true },
+    { to: '/orders', label: 'Orders', requiresAuth: true },
+  ].filter((item) => !item.requiresAuth || isAuthenticated)
+
   return (
     <header className="border-b border-stone-200 bg-white/95 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-28 flex items-center justify-between gap-6">
+        <div className="h-28 flex items-center justify-between gap-6 relative">
           <div className="flex items-center gap-4 flex-shrink-0">
             <img src={logo} alt="MG Mini Factory" className="h-[5.5rem] w-auto flex-shrink-0 max-w-none" />
           </div>
-          <nav className="flex items-center gap-10 text-stone-700 font-medium text-2xl">
-            <Link to="/" className={`hover:text-[var(--brand)] ${isActive('/') ? 'text-[var(--brand)]' : ''}`}>
-              Home
-            </Link>
-            {isAuthenticated && (
-              <>
-                <Link
-                  to="/dashboard"
-                  className={`hover:text-[var(--brand)] ${isActive('/dashboard') ? 'text-[var(--brand)]' : ''}`}
-                >
-                  Dashboard
-                </Link>
-                <Link to="/quotes" className={`hover:text-[var(--brand)] ${isActive('/quotes') ? 'text-[var(--brand)]' : ''}`}>
-                  Quotes
-                </Link>
-                <Link to="/orders" className={`hover:text-[var(--brand)] ${isActive('/orders') ? 'text-[var(--brand)]' : ''}`}>
-                  Orders
-                </Link>
-              </>
-            )}
+          <nav className="hidden lg:flex items-center gap-10 text-stone-700 font-medium text-2xl">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`hover:text-[var(--brand)] ${isActive(item.to) ? 'text-[var(--brand)]' : ''}`}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
-          <div className="flex-1 flex justify-end">
+          <div className="hidden lg:flex flex-1 justify-end">
             {isAuthenticated ? (
               <div className="flex items-center gap-4 text-right">
                 <div>
@@ -92,6 +94,71 @@ function Navigation({ isAuthenticated, user, onLogout, onLoginClick }: Navigatio
               </button>
             )}
           </div>
+          <div className="lg:hidden ml-auto">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              aria-label="Toggle navigation menu"
+              aria-expanded={isMenuOpen}
+              className="inline-flex items-center justify-center rounded-full border border-stone-300 p-2 text-stone-700 hover:bg-stone-50 transition"
+            >
+              {isMenuOpen ? (
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+          {isMenuOpen && (
+            <div className="lg:hidden absolute top-full left-0 right-0 border-b border-stone-200 bg-white shadow-lg">
+              <div className="px-4 py-6 flex flex-col gap-4 text-stone-700 font-medium text-xl">
+                {navItems.map((item) => (
+                  <Link
+                    key={`${item.to}-mobile`}
+                    to={item.to}
+                    className={`block rounded-xl px-3 py-2 ${
+                      isActive(item.to) ? 'bg-[var(--brand)]/10 text-[var(--brand)]' : 'hover:bg-stone-100'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <div className="pt-4 border-t border-stone-200">
+                  {isAuthenticated ? (
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <p className="text-sm text-stone-500">Signed in as</p>
+                        <p className="text-stone-800 font-semibold">{user?.username ?? user?.email}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false)
+                          onLogout()
+                        }}
+                        className="rounded-full border border-stone-300 px-4 py-2 text-base font-semibold text-[var(--brand)] hover:border-[var(--brand)]"
+                      >
+                        Log out
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false)
+                        onLoginClick()
+                      }}
+                      className="w-full rounded-full border border-[var(--brand)] px-4 py-2 text-lg font-semibold text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white transition"
+                    >
+                      Log in
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
